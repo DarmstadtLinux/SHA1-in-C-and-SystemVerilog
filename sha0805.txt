@@ -1,0 +1,188 @@
+module sha0805 (
+	(* chip_pin = "V11" *) input logic clk
+);
+// ##### Variablen
+int  unsigned m; // anzahl msg bits
+int unsigned mp; // anzahl padded msg bits
+int unsigned k; // anzahl 0 en
+int  unsigned anzBloecke =2;
+int  unsigned anzWoerter;
+int unsigned testarray [4000:0] ;
+int unsigned test [16] = '{'h61626380,0,0,0,0,0,0,0,0,0,0,0,0,0,0,'h00000018};
+int unsigned a;
+int unsigned b;
+int unsigned c;
+int unsigned d;
+int unsigned e;
+
+int unsigned H0='h67452301;
+int unsigned H1='hefcdab89;
+int unsigned H2='h98badcfe;
+int unsigned H3='h10325476;
+int unsigned H4='hc3d2e1f0;
+
+int unsigned H0save='h67452301;
+int unsigned H1save='hefcdab89;
+int unsigned H2save='h98badcfe;
+int unsigned H3save='h10325476;
+int unsigned H4save='hc3d2e1f0;
+int unsigned Wj[80]; // Parameter muss für jeden Block M neu berechnet werden
+//##### Funktionen
+function int add(input int s1,s2);
+add = s1+s2;
+$display("beste leben");
+endfunction
+//# Rotate Left x = variable n = rotationen
+function int unsigned rotl(input int unsigned x,n);
+rotl=((x << n) | (x >> (32 - n)));
+endfunction
+
+//## f1...f4
+function int unsigned f1(input int unsigned b,c,d);
+f1=((b & (c)) | ((~b) & d));
+endfunction
+
+function int unsigned f2(input int unsigned b,c,d);
+f2= (b ^ c ^ d);
+endfunction
+
+function int unsigned f3(input int unsigned b,c,d);
+f3= ((b & c) | ((b & d) | (c & d)));
+endfunction
+
+function int unsigned f4(input int unsigned b,c,d);
+f4= (b ^ c ^ d);
+endfunction
+
+
+
+// es soll hier eine Nachricht erwartet werden die in einem int unsigned array kommt. jedes wort/ Element hat dabei 32 Bit
+// Padding algorithm 
+
+
+
+
+
+initial begin
+
+// # Padding, Die Nachricht wird nun gepadded:
+	// # die gepaddete Nachricht besteht aus:
+	// # Nachrichtenlänge = m
+	// # Leangeninformation = m64
+	// # Ein Bit am Ende der Nachricht = 1
+	// # Auffüllen damit vielfaches von 512 = k
+	k = 512 - ((m + 1 + 64) % 512);// # Berechnung von k = anzahl von anzuhängenden "0"-Bits damit die gepaddedet Nachricht ein Vielfaches von 512 ist
+	anzBloecke = (m + 1 + 64 + k) / 512; // Berechnung anzhal der Blöcke
+	mp = anzBloecke * 512; // Anzahl Bits nach padding
+	anzWoerter = anzBloecke * 16;
+
+// füge an stelle m+1 die 1 hinzu
+
+// füge k nullbits hinzu
+// fürge 64 bits mit der information der leange hinzu
+
+
+
+// r zeahlt bis anzBloecke hoch..
+
+for( int r=0; r<1; r++) begin// sha1 4 Rounds for each Block -> die Hauptschleife für jeden Block 4 Runden..
+
+for(int i = 0; i<16;i++) begin // Wj: im betreffenden Block r werden zuerst 16 Wj Wert 0...15 herausgelesen für Wj
+
+Wj[i] = test[(0*16)+i]; //  r = aktueller block bei r = 0 wörter: 0...15 lesen, bei r = 1 => 16...31 usw. letzter block und element bzw. letztes wort: bei 3 *16 +15 =>48...63
+end // in der gepaddeten nachricht weahlt die schleife den passenden block und davon die passenden werte, das Problem ist die allgemeine schreibweise
+// #### !!!!!!!! ACHTUNG MIT DIESER SCHREIBWEISE HIER OBEN WIRD NUR BLOCK 0 BETRACHET !!!!!!!!! 
+//!!!!!!!!!!!!!!!!!!!!!!
+
+//
+for (int i = 16; i <= 79; i++) begin//Wj: 16...79:
+Wj[i] = rotl((Wj[i - 16] ^ Wj[i - 14] ^ Wj[i - 8] ^ Wj[i - 3]), 1); // rotl um 1
+end
+
+end 
+// Runde 1:
+for (int i = 0; i < 20; i++) begin
+
+			a = (H4 + f1(H1, H2, H3) + rotl(H0, 5) + Wj[i] + 'h5a827999);
+			b = H0;
+			c = rotl(H1, 30);
+			d = H2; // D = C
+			e = H3;// E = D
+			// aktualisieren:
+			H0 = a;
+			H1 = b;
+			H2 = c;
+			H3 = d;
+			H4 = e;
+end //endrunde1
+
+// Runde 2:
+
+for (int i = 20; i < 40; i++) begin
+
+			a = (H4 + f2(H1, H2, H3) + rotl(H0, 5) + Wj[i] + 'h6ed9eba1);
+			b = H0;
+			c = rotl(H1, 30);
+			d = H2; // D = C
+			e = H3;// E = D
+			// aktualisieren:
+			H0 = a;
+			H1 = b;
+			H2 = c;
+			H3 = d;
+			H4 = e;
+		end //:endrunde2
+// Runde 3:
+for (int i = 40; i < 60; i++) begin
+
+			a = (H4 + f3(H1, H2, H3) + rotl(H0, 5) + Wj[i] + 'h8f1bbcdc);
+			b = H0;
+			c = rotl(H1, 30);
+			d = H2; // D = C
+			e = H3;// E = D
+			// aktualisieren:
+			H0 = a;
+			H1 = b;
+			H2 = c;
+			H3 = d;
+			H4 = e;
+		end //:endrunde3// end runde 3
+
+//Runde 4:
+for (int i = 60; i < 80; i++) begin
+
+			a = (H4 + f4(H1, H2, H3) + rotl(H0, 5) + Wj[i] + 'hca62c1d6);
+			b = H0;
+			c = rotl(H1, 30);
+			d = H2; // D = C
+			e = H3;// E = D
+			// aktualisieren:
+			H0 = a;
+			H1 = b;
+			H2 = c;
+			H3 = d;
+			H4 = e;
+end //:endrunde4// end runde 4
+		H0 = H0 + H0save;
+		H1 = H1 + H1save;
+		H2 = H2 + H2save;
+		H3 = H3 + H3save;
+		H4 = H4 + H4save;
+		H0save = H0;
+		H1save = H1;
+		H2save = H2;
+		H3save = H3;
+		H4save = H4;
+
+
+
+end //:init
+
+
+
+
+
+
+
+
+endmodule
